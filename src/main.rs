@@ -154,6 +154,8 @@ fn setup(
 fn drive_car(
     time: Res<Time>,
     keys: Res<ButtonInput<KeyCode>>,
+    touches: Res<Touches>,
+    windows: Query<&Window, With<PrimaryWindow>>,
     mut query: Query<(&mut Transform, &mut DriftState), With<PlayerCar>>,
 ) {
     let Ok((mut transform, mut state)) = query.single_mut() else {
@@ -161,11 +163,29 @@ fn drive_car(
     };
 
     let dt = time.delta_secs().min(0.05);
-    let throttle = keys.pressed(KeyCode::KeyW) || keys.pressed(KeyCode::ArrowUp);
-    let brake = keys.pressed(KeyCode::KeyS) || keys.pressed(KeyCode::ArrowDown);
-    let left = keys.pressed(KeyCode::KeyA) || keys.pressed(KeyCode::ArrowLeft);
-    let right = keys.pressed(KeyCode::KeyD) || keys.pressed(KeyCode::ArrowRight);
-    let handbrake = keys.pressed(KeyCode::Space);
+    let (mut touch_throttle, mut touch_brake, mut touch_handbrake) = (false, false, false);
+    let (mut touch_left, mut touch_right) = (false, false);
+    if let Ok(window) = windows.single() {
+        let w = window.width();
+        let h = window.height();
+        for touch in touches.iter() {
+            let p = touch.position();
+            if p.x < w * 0.42 {
+                if p.x < w * 0.21 { touch_left = true; }
+                else { touch_right = true; }
+            } else if p.x > w * 0.76 {
+                if p.y > h * 0.52 { touch_throttle = true; }
+                else { touch_brake = true; }
+            } else if p.x > w * 0.48 && p.y > h * 0.62 {
+                touch_handbrake = true;
+            }
+        }
+    }
+    let throttle = keys.pressed(KeyCode::KeyW) || keys.pressed(KeyCode::ArrowUp) || touch_throttle;
+    let brake = keys.pressed(KeyCode::KeyS) || keys.pressed(KeyCode::ArrowDown) || touch_brake;
+    let left = keys.pressed(KeyCode::KeyA) || keys.pressed(KeyCode::ArrowLeft) || touch_left;
+    let right = keys.pressed(KeyCode::KeyD) || keys.pressed(KeyCode::ArrowRight) || touch_right;
+    let handbrake = keys.pressed(KeyCode::Space) || touch_handbrake;
 
     if throttle { state.speed += 17.0 * dt; }
     if brake { state.speed -= 25.0 * dt; }
