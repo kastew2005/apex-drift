@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#111820">
+  <meta name="description" content="APEX DRIFT — mobile drift racing">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link data-trunk rel="rust" data-wasm-opt="z">
+  <link rel="stylesheet" href="web/style.css">
+  <title>APEX DRIFT</title>
+</head>
+<body>
+  <div id="loading" aria-live="polite">
+    <div class="brand">APEX <span>DRIFT</span></div>
+    <div class="loading-line"></div>
+    <p>INITIALIZING ENGINE</p>
+  </div>
+  <div id="mobile-help">
+    <div>W / ↑ — GAS<br>S / ↓ — BRAKE<br>A D / ← → — STEER</div>
+    <div>SPACE — HANDBRAKE</div>
+  </div>
+  <script>
+    window.addEventListener("load", () => {
+      setTimeout(() => document.getElementById("loading")?.classList.add("hidden"), 5000);
+    });
+  </script>
+</body>
+</html>
