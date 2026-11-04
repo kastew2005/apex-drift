@@ -41,7 +41,7 @@ fn setup(
     commands.spawn((
         DirectionalLight {
             illuminance: 12_000.0,
-            shadow_map_enabled: true,
+            shadow_maps_enabled: true,
             ..default()
         },
         Transform::from_xyz(-25.0, 45.0, 20.0).looking_at(Vec3::ZERO, Vec3::Y),
@@ -51,7 +51,7 @@ fn setup(
         PointLight {
             intensity: 2_000_000.0,
             range: 120.0,
-            shadow_map_enabled: true,
+            shadow_maps_enabled: true,
             ..default()
         },
         Transform::from_xyz(0.0, 28.0, 0.0),
