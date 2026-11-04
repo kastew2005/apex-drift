@@ -1,12 +1,20 @@
 {
+  "id": "/apex-drift/",
   "name": "APEX DRIFT",
-  "short_name": "APEX DRIFT",
+  "short_name": "APEX",
   "description": "Stylized mobile drift racing",
-  "start_url": "/apex-drift/",
+  "start_url": "/apex-drift/?source=homescreen",
   "scope": "/apex-drift/",
-  "display": "fullscreen",
+  "display": "standalone",
   "orientation": "landscape",
   "background_color": "#111820",
   "theme_color": "#111820",
-  "icons": []
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
 }
