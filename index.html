@@ -5,12 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#111820">
   <meta name="description" content="APEX DRIFT — mobile drift racing">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="APEX DRIFT">
   <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon.svg">
   <link data-trunk rel="css" href="web/style.css">
   <link data-trunk rel="rust" data-wasm-opt="z">
   <title>APEX DRIFT</title>
 </head>
 <body>
+  <button id="install-app" type="button" aria-label="Install APEX DRIFT">＋ ADD TO HOME SCREEN</button>
+  <div id="install-help" role="dialog" aria-modal="true" aria-labelledby="install-title" hidden>
+    <div class="install-card">
+      <button id="install-close" type="button" aria-label="Close">×</button>
+      <div class="install-brand">APEX <span>DRIFT</span></div>
+      <h2 id="install-title">Add APEX DRIFT to your Home Screen</h2>
+      <p>On your iPhone:</p>
+      <ol>
+        <li>Tap the <strong>Share</strong> button in Safari.</li>
+        <li>Scroll down and choose <strong>Add to Home Screen</strong>.</li>
+        <li>Tap <strong>Add</strong> in the top-right corner.</li>
+      </ol>
+      <p class="install-note">The game will open from its own icon. Load it once while online so its files can be saved for offline use.</p>
+    </div>
+  </div>
   <div id="loading" aria-live="polite">
     <div class="brand">APEX <span>DRIFT</span></div>
     <div class="loading-line"></div>
@@ -29,10 +49,51 @@
   </div>
   <script>
     (() => {
+      const installButton = document.getElementById("install-app");
+      const help = document.getElementById("install-help");
+      const closeHelp = document.getElementById("install-close");
+      let installPrompt = null;
+      const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+
+      if (isStandalone) {
+        installButton.hidden = true;
+      } else if (isIOS) {
+        installButton.hidden = false;
+        installButton.addEventListener("click", () => { help.hidden = false; });
+      } else {
+        window.addEventListener("beforeinstallprompt", event => {
+          event.preventDefault();
+          installPrompt = event;
+          installButton.hidden = false;
+        });
+        window.addEventListener("appinstalled", () => {
+          installButton.hidden = true;
+          installPrompt = null;
+        });
+        installButton.addEventListener("click", async () => {
+          if (!installPrompt) return;
+          installPrompt.prompt();
+          await installPrompt.userChoice;
+          installPrompt = null;
+          installButton.hidden = true;
+        });
+      }
+
+      closeHelp.addEventListener("click", () => { help.hidden = true; });
+      help.addEventListener("click", event => { if (event.target === help) help.hidden = true; });
+
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("/apex-drift/sw.js", { scope: "/apex-drift/" }).catch(error => {
+            console.warn("APEX DRIFT offline support unavailable:", error);
+          });
+        });
+      }
+
       const loading = document.getElementById("loading");
       const message = document.getElementById("loading-message");
       let started = false;
-
       const checkCanvas = () => {
         if (started) return;
         const canvas = document.querySelector("canvas");
@@ -43,9 +104,7 @@
         }
         requestAnimationFrame(checkCanvas);
       };
-
       requestAnimationFrame(checkCanvas);
-
       window.setTimeout(() => {
         if (!document.querySelector("canvas")) {
           if (message) message.textContent = "ENGINE DID NOT START — RELOAD THE PAGE";
