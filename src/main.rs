@@ -17,7 +17,7 @@ fn main() {
         }))
         .insert_resource(ClearColor(Color::srgb(0.055, 0.075, 0.09)))
         .add_systems(Startup, setup)
-        .add_systems(Update, (drive_car, follow_camera))
+        .add_systems(Update, (drive_car, follow_camera, update_hud))
         .run();
 }
 
@@ -26,6 +26,9 @@ struct PlayerCar;
 
 #[derive(Component)]
 struct FollowCamera;
+
+#[derive(Component)]
+struct SpeedHud;
 
 #[derive(Component)]
 struct DriftState {
@@ -145,6 +148,22 @@ fn setup(
     });
 
     commands.spawn((
+        Text::new("000 KM/H"),
+        TextFont {
+            font_size: 30.0,
+            ..default()
+        },
+        TextColor(Color::srgb(0.96, 0.95, 0.88)),
+        Node {
+            position_type: PositionType::Absolute,
+            left: Val::Px(24.0),
+            top: Val::Px(22.0),
+            ..default()
+        },
+        SpeedHud,
+    ));
+
+    commands.spawn((
         Camera3d::default(),
         Transform::from_xyz(TRACK_RX + 8.0, 7.0, -11.0)
             .looking_at(Vec3::new(TRACK_RX, 0.5, 0.0), Vec3::Y),
@@ -194,14 +213,22 @@ fn drive_car(
     state.speed = state.speed.clamp(-8.0, 34.0);
 
     let steer = (right as i8 - left as i8) as f32;
-    let speed_factor = (state.speed.abs() / 10.0).clamp(0.15, 1.0);
-    let drift_factor = if handbrake { 1.65 } else { 1.0 };
-    state.yaw -= steer * speed_factor * drift_factor * 1.45 * dt * state.speed.signum();
+    let speed_factor = (state.speed.abs() / 8.0).clamp(0.12, 1.0);
+    let drift_factor = if handbrake { 1.9 } else { 1.0 };
+    let steering_response = if handbrake { 1.85 } else { 1.35 };
+    state.yaw -= steer * speed_factor * drift_factor * steering_response * dt * state.speed.signum();
 
     let forward = Vec3::new(state.yaw.sin(), 0.0, state.yaw.cos());
-    let target_velocity = forward * state.speed;
-    let grip = if handbrake { 0.035 } else { 0.12 };
-    state.velocity = state.velocity.lerp(target_velocity, (grip * 60.0 * dt).clamp(0.0, 1.0));
+    let right_axis = Vec3::new(forward.z, 0.0, -forward.x);
+    let forward_speed = state.velocity.dot(forward);
+    let lateral_speed = state.velocity.dot(right_axis);
+    let target_forward = forward * state.speed;
+    let lateral_grip = if handbrake { 0.018 } else { 0.16 };
+    let forward_grip = if throttle || brake { 0.10 } else { 0.035 };
+    let corrected_forward = forward * forward_speed
+        + (target_forward - forward * forward_speed) * (forward_grip * 60.0 * dt).clamp(0.0, 1.0);
+    let corrected_lateral = right_axis * lateral_speed * (1.0 - (lateral_grip * 60.0 * dt).clamp(0.0, 1.0));
+    state.velocity = corrected_forward + corrected_lateral;
     transform.translation += state.velocity * dt;
     transform.rotation = Quat::from_rotation_y(state.yaw);
 }
@@ -221,4 +248,22 @@ fn follow_camera(
     let blend = (time.delta_secs() * 4.5).clamp(0.0, 1.0);
     camera.translation = camera.translation.lerp(desired, blend);
     camera.look_at(look_at, Vec3::Y);
+}
+
+
+fn update_hud(
+    car_query: Query<&DriftState, With<PlayerCar>>,
+    mut hud_query: Query<&mut Text, With<SpeedHud>>,
+) {
+    let (Ok(state), Ok(mut text)) = (car_query.single(), hud_query.single_mut()) else {
+        return;
+    };
+    let kmh = (state.speed.abs() * 3.6).round() as u32;
+    let drifting = state.velocity.length() > 5.0
+        && state.velocity.normalize_or_zero().dot(Vec3::new(state.yaw.sin(), 0.0, state.yaw.cos())) < 0.94;
+    *text = Text::new(if drifting {
+        format!("{:03} KM/H   •   DRIFT", kmh)
+    } else {
+        format!("{:03} KM/H", kmh)
+    });
 }
