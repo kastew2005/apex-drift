@@ -173,8 +173,8 @@ fn drive_car(
             if p.x < w * 0.42 {
                 if p.x < w * 0.21 { touch_left = true; }
                 else { touch_right = true; }
-            } else if p.x > w * 0.76 {
-                if p.y > h * 0.52 { touch_throttle = true; }
+            } else if p.x > w * 0.76 && p.y > h * 0.52 {
+                if p.x > w * 0.88 { touch_throttle = true; }
                 else { touch_brake = true; }
             } else if p.x > w * 0.48 && p.y > h * 0.62 {
                 touch_handbrake = true;
