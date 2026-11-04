@@ -22,7 +22,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
-      - uses: cargo install trunk --locked
+      - name: Install Trunk
+        run: cargo install trunk --locked
       - uses: actions/configure-pages@v5
       - name: Build WebAssembly app
         run: trunk build --release
