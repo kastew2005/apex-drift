@@ -6,24 +6,46 @@
   <meta name="theme-color" content="#111820">
   <meta name="description" content="APEX DRIFT — mobile drift racing">
   <link rel="manifest" href="manifest.webmanifest">
+  <link data-trunk rel="css" href="web/style.css">
   <link data-trunk rel="rust" data-wasm-opt="z">
-  <link rel="stylesheet" href="web/style.css">
   <title>APEX DRIFT</title>
 </head>
 <body>
   <div id="loading" aria-live="polite">
     <div class="brand">APEX <span>DRIFT</span></div>
     <div class="loading-line"></div>
-    <p>INITIALIZING ENGINE</p>
+    <p id="loading-message">INITIALIZING ENGINE</p>
   </div>
   <div id="mobile-help">
     <div>W / ↑ — GAS<br>S / ↓ — BRAKE<br>A D / ← → — STEER</div>
     <div>SPACE — HANDBRAKE</div>
   </div>
   <script>
-    window.addEventListener("load", () => {
-      setTimeout(() => document.getElementById("loading")?.classList.add("hidden"), 5000);
-    });
+    (() => {
+      const loading = document.getElementById("loading");
+      const message = document.getElementById("loading-message");
+      let started = false;
+
+      const checkCanvas = () => {
+        if (started) return;
+        const canvas = document.querySelector("canvas");
+        if (canvas) {
+          started = true;
+          loading?.classList.add("hidden");
+          return;
+        }
+        requestAnimationFrame(checkCanvas);
+      };
+
+      requestAnimationFrame(checkCanvas);
+
+      window.setTimeout(() => {
+        if (!document.querySelector("canvas")) {
+          if (message) message.textContent = "ENGINE DID NOT START — RELOAD THE PAGE";
+          loading?.classList.add("error");
+        }
+      }, 25000);
+    })();
   </script>
 </body>
 </html>
