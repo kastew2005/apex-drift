@@ -16,9 +16,16 @@
     <div class="loading-line"></div>
     <p id="loading-message">INITIALIZING ENGINE</p>
   </div>
-  <div id="mobile-help">
-    <div>W / ↑ — GAS<br>S / ↓ — BRAKE<br>A D / ← → — STEER</div>
-    <div>SPACE — HANDBRAKE</div>
+  <div id="mobile-controls" aria-hidden="true">
+    <div class="steering">
+      <div class="control-key left-key">◀<small>LEFT</small></div>
+      <div class="control-key right-key">▶<small>RIGHT</small></div>
+    </div>
+    <div class="handbrake control-key">HANDBRAKE</div>
+    <div class="pedals">
+      <div class="control-key brake-key">BRAKE</div>
+      <div class="control-key gas-key">GAS</div>
+    </div>
   </div>
   <script>
     (() => {
